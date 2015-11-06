@@ -19,9 +19,11 @@
 
 		#info {
 			position: absolute;
-			top: 0px;
-			width: 100%;
+			top: 50px;
+			left:0px;
+			width: 200px;
 			padding: 5px;
+			text-align: left
 		}
 
 		a {
@@ -44,8 +46,9 @@
 	<body>
 		<div id="container"></div>
 		<div id="info">
-		<a href="http://threejs.org" target="_blank">Digination Experiment 6</a>
-		<div id="notSupported" style="display:none">Sorry your graphics card + browser does not support hardware instancing</div>
+			Digination Experiment 6 <br>
+			<a href="#" onclick="toggleVR()">[TOGGLE VR]</a>
+			<div id="notSupported" style="display:none">Sorry your graphics card + browser does not support hardware instancing</div>
 		</div>
 
 		<script src="../build/three.min.js"></script>
@@ -110,7 +113,7 @@
 		void main() {
 
 			vec4 color = vec4( vColor );
-			color.g += sin( vPosition.x * 10.0 + time ) * 0.2;
+			color.g += sin( vPosition.x * 10.0 + time ) * 0.4;
 
 			gl_FragColor = color;
 
@@ -136,12 +139,14 @@
 			var cubes=[];
 			var targetPos=[];
 			var selfRotateVal=[];
-			var isFree=true, isVR=true;
+			var isFree=true, isVR=false, hasGyro=false;
 			var allObjects;
 			var millionsOfTriangles;
+			var autoFreeController;
+
 
 	
-			var clock = new THREE.Clock();
+			//var clock = new THREE.Clock();
 
 			init();
 			animate();
@@ -152,20 +157,25 @@
 			function init(){
 				//container = document.createElement( 'div' );
 				//document.body.appendChild( container );
+
+				console.log("------------------------------------------- START!");
 				container = document.getElementById( 'container' );
 				
-				/*
+			
 
-				if ( renderer.extensions.get( 'ANGLE_instanced_arrays' ) === false ) {
-				document.getElementById( "notSupported" ).style.display = "";
-				return;
-				}
-*/
+			
+
 
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight);
 				container.appendChild( renderer.domElement );
+
+				if ( renderer.extensions.get( 'ANGLE_instanced_arrays' ) === false ) {
+					document.getElementById( "notSupported" ).style.display = "";
+					return;
+				}
+
 
 				stats = new Stats();
 				stats.domElement.style.position = 'absolute';
@@ -178,41 +188,28 @@
 
 
 				document.addEventListener( 'keydown', onDocumentKeyDown, false );
-				/*
-				document.addEventListener( 'onclick', function(event) {
-    					event.target.touch();
-    					alert("touched!");
-				});
-*/
-
-			
-
-
-
 			
 
 				
 				var loader = new THREE.TextureLoader();
 			    loader.load( 'images/test.jpg', function ( texture )
 			    {
-
 			        	createTriangles(texture);
 			    } );
 
 
-				camera= new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.001, 2000 );
-				camera.position.z = 20;
+				
 
 				scene= new THREE.Scene();
-				scene.fog = new THREE.Fog( 0x000000, 0.001, 500 );
+				scene.fog = new THREE.Fog( 0x000000, 0.001, 100 );
 
 				///lights
-				var ambient = new THREE.AmbientLight( 0x15336f);
+				var ambient = new THREE.AmbientLight( 0x5396ff); // 0x15336f
 				scene.add( ambient );
 
 
 
-				var directionalLight = new THREE.DirectionalLight( 0x0000ff );
+				var directionalLight = new THREE.DirectionalLight( 0xffffff );
 				directionalLight.position.set( 0, 0, 1 );
 				scene.add( directionalLight );
 
@@ -222,40 +219,47 @@
 
 				// set its position
 				pointLight.position.x = 0;
-				pointLight.position.y = 20;
+				pointLight.position.y = 0;
 				pointLight.position.z = 0;
+
 
 				// add to the scene
 				scene.add(pointLight);
 
 
+				camera= new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.001, 2000 );
+				camera.position.set(0,0,20);
+
 					//////VR
 				 // Our initial control fallback with mouse/touch events in case DeviceOrientation is not enabled
+				 
+				 
+				
 		        controls = new THREE.OrbitControls(camera, renderer.domElement);
-		        controls.target.set(
-		          camera.position.x + 0.15,
-		          camera.position.y,
-		          camera.position.z+20
-		        );
+		        //controls.target.z = 150;
+		        
 		        controls.noPan = true;
 		        controls.noZoom = true;
+				controls.enabled=false; //temp..
+				
+
 
 		        // Our preferred controls via DeviceOrientation
 		        function setOrientationControls(e) {
-		          if (!e.alpha) {
-		          	
-		            return;
-		          }
 
-		       
+		        	  
+			          if (!e.alpha) {
+			          	
+			            return;
+			          }
+			          hasGyro=true;
+			          controls = new THREE.DeviceOrientationControls(camera, true);
+			     
+			          controls.connect();
+			          controls.update();
 
-		          controls = new THREE.DeviceOrientationControls(camera, true);
-		          controls.connect();
-		          controls.update();
-
-		          renderer.domElement.addEventListener('click', fullscreen, false);
-
-		          window.removeEventListener('deviceorientation', setOrientationControls, true);
+			          renderer.domElement.addEventListener('click', fullscreen, false);
+			          window.removeEventListener('deviceorientation', setOrientationControls, true);
 		        }
 		        window.addEventListener('deviceorientation', setOrientationControls, true);
 
@@ -356,7 +360,7 @@
 			
 
 			millionsOfTriangles = new THREE.Mesh( geometry, material );
-			millionsOfTriangles.scale.set(20.0,20.0,20.0);
+			millionsOfTriangles.scale.set(30.0,30.0,30.0);
 			scene.add( millionsOfTriangles );
 
 				//// add other objects
@@ -386,18 +390,47 @@
 
 				var onError = function ( xhr ) {
 				};
-				loader.load( 'objs/plus.obj', function ( object ) {
+				loader.load( 'objs/sanjiao.obj', loadObj , onProgress, onError );
+				loader.load( 'objs/plus.obj', loadObj , onProgress, onError );
 
+				
+
+
+				// postprocessing
+
+				composer = new THREE.EffectComposer( renderer );
+				composer.addPass( new THREE.RenderPass( scene, camera ) );
+
+				glitchPass = new THREE.GlitchPass();
+				glitchPass.renderToScreen = true;
+				composer.addPass(glitchPass);
+				glitchPass.goWild=false;
+
+				///////// effect
+				effect = new THREE.StereoEffect( renderer );
+				//effect.eyeSeparation =1;
+				//effect.setSize( window.innerWidth, window.innerHeight );
+
+
+			}
+
+
+
+
+			function loadObj( object ) {
+					//console.log("loading obj!");
 					var i=0;
 					object.traverse( function ( child ) {
 
 						if ( child instanceof THREE.Mesh ) {
+
+							//console.log("It's a mesh!");
 							//child.material.map = texture;
 
 							child.material.wireframe = true;
 						
 							manGeometry= new THREE.Geometry().fromBufferGeometry(child.geometry );
-							console.log(manMesh);
+						
 							
 						}
 
@@ -415,27 +448,6 @@
 					manMesh.scale.set(0.1,0.1,0.1);
 					manMesh.visible=false;
 					allObjects.add(manMesh);
-
-
-				}, onProgress, onError );
-
-
-
-
-				// postprocessing
-
-				composer = new THREE.EffectComposer( renderer );
-				composer.addPass( new THREE.RenderPass( scene, camera ) );
-
-				glitchPass = new THREE.GlitchPass();
-				glitchPass.renderToScreen = true;
-				composer.addPass( glitchPass );
-				glitchPass.goWild=false;
-
-				///////// effect
-				effect = new THREE.StereoEffect( renderer );
-				//effect.eyeSeparation =1;
-				//effect.setSize( window.innerWidth, window.innerHeight );
 
 
 			}
@@ -461,10 +473,16 @@
 					//var geometry = new THREE.BoxGeometry( .2, .2, .2 );
 					//var material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
 
-					var material = new THREE.MeshLambertMaterial( { 
-						color: 0xffffff, 
+					//var mirrorMaterial = new THREE.MeshPhongMaterial( { emissive: 0x111111, envMap: mirrorCamera.renderTarget } );
+
+
+					var material = new THREE.MeshPhongMaterial( { 
+						color: 0x73b1da,  // 
 						side:THREE.DoubleSide, 
-						map: texture  
+						emissive: 0x111111,
+						specular: 0xeeeeee,
+						shininess: 100,
+						map: texture 
 					} );
 
 
@@ -509,10 +527,16 @@
 			function onDocumentMouseDown( event ) {
 
 
-				if (isFree){
-					
-					isFree=false;
+				if (isFree) trianglesForm();
+				
+				else trianglesFree();
 
+				
+			}
+
+			function trianglesForm(){
+					isFree=false;
+					clearTimeout(autoFreeController);
 					
 					var tempMeshID=Math.floor(Math.random()*allObjects.children.length);
 					var tempMesh=allObjects.children[tempMeshID];
@@ -565,9 +589,11 @@
 
 					}
 
-				
-			
-				} else {
+					if (isVR) autoFreeController=setTimeout(trianglesFree,20*1000);
+			}
+
+			function trianglesFree(){
+					clearTimeout(autoFreeController);
 					isFree=true;
 					millionsOfTriangles.material.uniforms.sineTime.value=0;
 					for (var i=0; i<total; i++){
@@ -575,38 +601,40 @@
 						var b=cubes[i].geometry.faces[0].b;
 						var c=cubes[i].geometry.faces[0].c;
 
-						cubes[i].geometry.verticesNeedUpdate=true;
-						cubes[i].geometry.vertices[a].set(-1,0,0);
-						cubes[i].geometry.vertices[b].set(1,0,0);
-						cubes[i].geometry.vertices[c].set(0,0.75,0);
+						//cubes[i].geometry.verticesNeedUpdate=true;
+						//cubes[i].geometry.vertices[a].set(-1,0,0);
+						//cubes[i].geometry.vertices[b].set(1,0,0);
+						//cubes[i].geometry.vertices[c].set(0,0.75,0);
 
 						targetPos[i].set( Math.random()*80 - 40, Math.random()*80 - 40, Math.random()*80 - 40);
-						cubes[i].scale.set(Math.random()*2,Math.random()*2,Math.random()*2);
+						//cubes[i].scale.set(Math.random()*2,Math.random()*2,Math.random()*2);
 						cubes[i].rotation.set(Math.random(),Math.random(),Math.random());
 					}
 
-				}
+					if (isVR) autoFreeController=setTimeout(trianglesForm,10*1000);
+			}
 
-				
+			function toggleVR(){
+				if (isVR) { 
+			        	isVR=false;
+			        	
+			        }
+			        else { 
+			        	isVR=true;
+			        
+			        	camera.position.set(0,0,20);
+						trianglesFree(); //start auto mode
+			        	
+			        }
+
+			        renderer.setSize( window.innerWidth, window.innerHeight );
 			}
 
 			function onDocumentKeyDown( event )  {
 			    if(event.keyCode == 32) {
 			      
 
-			        if (isVR) { 
-			        	isVR=false;
-			        	renderer.setSize( window.innerWidth, window.innerHeight );
-			        }
-			        else { 
-			        	isVR=true;
-			        	camera.position.x =0;
-						camera.position.y =0;
-						camera.position.z =20;
-					
-						camera.lookAt( scene.position );
-			        	
-			        }
+			        
 			    }
 			    
 			}
@@ -621,32 +649,26 @@
 			function animate() {
 
 				requestAnimationFrame( animate );
-				
-
 				stats.update();
-
-				update(clock.getDelta());
-				render(clock.getDelta());
-				
-  
-
+				updateControls();
+				render();
 
 			}
 
 
-			function update(dt) {
+			function updateControls() {
 
 				if (isVR) {
      			 	onWindowResize();
       				camera.updateProjectionMatrix();
-
-      				controls.update(dt);
+      				controls.update();
       				
       			}
     		}
     		
 
 			function fullscreen() {
+				console.log("fullscreen!");
 			      if (container.requestFullscreen) {
 			        container.requestFullscreen();
 			      } else if (container.msRequestFullscreen) {
@@ -659,7 +681,7 @@
 			}
 			
 
-			function render(dt) {
+			function render() {
 
 
 				////millions of shit///
@@ -672,13 +694,17 @@
 				if (isFree) { 
 					
 
-					if (millionsOfTriangles.material.uniforms.sineTime.value<5) millionsOfTriangles.material.uniforms.sineTime.value+=0.01;
+					if (millionsOfTriangles.material.uniforms.sineTime.value<1.5) 
+						millionsOfTriangles.material.uniforms.sineTime.value+=0.005;
 
 		
 				}
 				else { 
+
+					////going to the center
+
 					if (millionsOfTriangles.material.uniforms.sineTime.value>0){
-						millionsOfTriangles.material.uniforms.sineTime.value*=0.95;
+						millionsOfTriangles.material.uniforms.sineTime.value*=0.96;
 					}
 				}
 				/////our faces
@@ -698,21 +724,19 @@
 
 				
 				if (isVR) {
-
-				
-				 
 					effect.render( scene, camera );
-
 
 				}
 				else {
-					camera.position.z=20;
-					///mouse 
-					camera.position.x += ( mouseX - camera.position.x ) * .02;
-					camera.position.y += ( - mouseY - camera.position.y ) * .02;
 					
+					if (!hasGyro) {
+						///mouse 
+						camera.position.x += ( mouseX - camera.position.x ) * .02;
+						camera.position.y += ( - mouseY - camera.position.y ) * .02;
+						
+					}
+
 					camera.lookAt( scene.position );
-				
 				
 					if (!isFree) renderer.render( scene, camera );
 					else composer.render();
