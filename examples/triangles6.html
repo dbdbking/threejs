@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset=utf-8>
-		<title>Triangle Experiment #6</title>
+		<title>nowlab experiment: Triangle #6</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
@@ -46,7 +46,8 @@
 	<body>
 		<div id="container"></div>
 		<div id="info">
-			Digination Experiment 6 <br>
+			nowlab experiment<br><br>
+			Triangle #6 <br>
 			<a href="#" onclick="toggleVR()">[TOGGLE VR]</a>
 			<div id="notSupported" style="display:none">Sorry your graphics card + browser does not support hardware instancing</div>
 		</div>
@@ -113,7 +114,10 @@
 		void main() {
 
 			vec4 color = vec4( vColor );
-			color.g += sin( vPosition.x * 10.0 + time ) * 0.4;
+
+
+
+			color.b += sin( vPosition.x * 5.0 + time) * 0.1;
 
 			gl_FragColor = color;
 
@@ -143,6 +147,7 @@
 			var allObjects;
 			var millionsOfTriangles;
 			var autoFreeController;
+			var tweenDamp=50;
 
 
 	
@@ -192,7 +197,7 @@
 
 				
 				var loader = new THREE.TextureLoader();
-			    loader.load( 'images/test.jpg', function ( texture )
+			    loader.load( 'images/eye2.jpg', function ( texture )
 			    {
 			        	createTriangles(texture);
 			    } );
@@ -304,7 +309,8 @@
 
 				//colors.setXYZW( i, Math.random(), Math.random(), Math.random(), Math.random() );
 
-				colors.setXYZW( i,28/255, 71/255, 140/255, Math.random() );
+				////set millions of trangles' color mcolor
+				colors.setXYZW( i, Math.random()*0.2, 60/255, Math.random()*0.7+0.3, Math.random() );
 
 			}
 
@@ -363,35 +369,35 @@
 			millionsOfTriangles.scale.set(30.0,30.0,30.0);
 			scene.add( millionsOfTriangles );
 
-				//// add other objects
-				allObjects = new THREE.Object3D();
+			//// add other objects
+			allObjects = new THREE.Object3D();
 
-				scene.add(allObjects);
+			scene.add(allObjects);
 
-				var tempMesh=new THREE.Mesh( new THREE.SphereGeometry( 10, 16, 16 ));
+			var tempMesh=new THREE.Mesh( new THREE.SphereGeometry( 10, 16, 16 ));
 
-				tempMesh.material.wireframe=true;
-				tempMesh.visible=false;
-				allObjects.add(tempMesh);
+			tempMesh.material.wireframe=true;
+			tempMesh.visible=false;
+			allObjects.add(tempMesh);
 
-				var manager = new THREE.LoadingManager();
-				var loader = new THREE.OBJLoader( manager );
-				manager.onProgress = function ( item, loaded, total ) {
+			var manager = new THREE.LoadingManager();
+			var loader = new THREE.OBJLoader( manager );
+			manager.onProgress = function ( item, loaded, total ) {
 
-					console.log( item, loaded, total );
+				console.log( item, loaded, total );
 
-				};
-				var onProgress = function ( xhr ) {
-					if ( xhr.lengthComputable ) {
-						var percentComplete = xhr.loaded / xhr.total * 100;
-						console.log( Math.round(percentComplete, 2) + '% downloaded' );
-					}
-				};
+			};
+			var onProgress = function ( xhr ) {
+				if ( xhr.lengthComputable ) {
+					var percentComplete = xhr.loaded / xhr.total * 100;
+					console.log( Math.round(percentComplete, 2) + '% downloaded' );
+				}
+			};
 
-				var onError = function ( xhr ) {
-				};
-				loader.load( 'objs/sanjiao.obj', loadObj , onProgress, onError );
-				loader.load( 'objs/plus.obj', loadObj , onProgress, onError );
+			var onError = function ( xhr ) {
+			};
+			loader.load( 'objs/sanjiao.obj', loadObj , onProgress, onError );
+			loader.load( 'objs/plus.obj', loadObj , onProgress, onError );
 
 				
 
@@ -405,6 +411,9 @@
 				glitchPass.renderToScreen = true;
 				composer.addPass(glitchPass);
 				glitchPass.goWild=false;
+
+				glitchPass.waitTime=120;
+				glitchPass.randomTime=300;
 
 				///////// effect
 				effect = new THREE.StereoEffect( renderer );
@@ -470,11 +479,6 @@
 					triangleGeometry.faceVertexUvs[0][0][1] = new THREE.Vector2( 0, 1 );
 
 
-					//var geometry = new THREE.BoxGeometry( .2, .2, .2 );
-					//var material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
-
-					//var mirrorMaterial = new THREE.MeshPhongMaterial( { emissive: 0x111111, envMap: mirrorCamera.renderTarget } );
-
 
 					var material = new THREE.MeshPhongMaterial( { 
 						color: 0x73b1da,  // 
@@ -536,6 +540,7 @@
 
 			function trianglesForm(){
 					isFree=false;
+					tweenDamp=50;
 					clearTimeout(autoFreeController);
 					
 					var tempMeshID=Math.floor(Math.random()*allObjects.children.length);
@@ -595,6 +600,7 @@
 			function trianglesFree(){
 					clearTimeout(autoFreeController);
 					isFree=true;
+					tweenDamp=8;
 					millionsOfTriangles.material.uniforms.sineTime.value=0;
 					for (var i=0; i<total; i++){
 						var a=cubes[i].geometry.faces[0].a;
@@ -714,9 +720,9 @@
 						cubes[i].rotation.x += selfRotateVal[i].x;
 						cubes[i].rotation.y += selfRotateVal[i].y;
 
-						cubes[i].position.x= cubes[i].position.x+(targetPos[i].x-cubes[i].position.x)/20;
-						cubes[i].position.y= cubes[i].position.y+(targetPos[i].y-cubes[i].position.y)/20;
-						cubes[i].position.z= cubes[i].position.z+(targetPos[i].z-cubes[i].position.z)/20;
+						cubes[i].position.x= cubes[i].position.x+(targetPos[i].x-cubes[i].position.x)/tweenDamp;
+						cubes[i].position.y= cubes[i].position.y+(targetPos[i].y-cubes[i].position.y)/tweenDamp;
+						cubes[i].position.z= cubes[i].position.z+(targetPos[i].z-cubes[i].position.z)/tweenDamp;
 						
 					
 					

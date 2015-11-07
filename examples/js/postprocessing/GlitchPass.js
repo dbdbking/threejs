@@ -21,6 +21,11 @@ THREE.GlitchPass = function ( dt_size ) {
 		fragmentShader: shader.fragmentShader
 	} );
 
+	this.waitTime=120;
+	this.randomTime=120;
+
+	
+
 	this.enabled = true;
 	this.renderToScreen = false;
 	this.needsSwap = true;
@@ -35,6 +40,8 @@ THREE.GlitchPass = function ( dt_size ) {
 	this.goWild = false;
 	this.curF = 0;
 	this.generateTrigger();
+
+	
 	
 };
 
@@ -87,7 +94,8 @@ THREE.GlitchPass.prototype = {
 	},
 	generateTrigger: function() {
 
-		this.randX = THREE.Math.randInt( 120, 240 );
+		this.randX = THREE.Math.randInt( this.waitTime, this.waitTime+this.randomTime );
+
 
 	},
 	generateHeightmap: function( dt_size ) {
